@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 axum = "0.7.7"
 serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.133"
 tokio = "1.41.0"

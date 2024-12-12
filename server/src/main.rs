@@ -2,10 +2,12 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::post,
-    Error, Json, Router,
+    Json, Router,
 };
 
-use serde::{Deserialize, Serialize};
+use models::{entry, request, response};
+
+mod models;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -22,66 +24,31 @@ async fn main() {
     println!("Rust server is listening on port {PORT}");
 }
 
-async fn entries(Json(payload): Json<EntriesRequest>) -> (StatusCode, Json<EntriesResponse>) {
+async fn entries(Json(payload): Json<request::EntriesRequest>) -> Response {
     if payload.namespace == "eli" {
         println!("heyo!");
     }
-    let response = EntriesResponse { entries: 2 };
+    let response = response::EntriesResponse { entries: 3 };
 
-    return (StatusCode::OK, Json(response));
+    return (StatusCode::OK, Json(response)).into_response();
 }
 
-async fn create_entry(Json(payload): Json<CreateEntryRequest>) -> Response {
-    if payload.content_type == ContentType::File {
+async fn create_entry(Json(payload): Json<request::CreateEntryRequest>) -> Response {
+    if payload.content_type == entry::ContentType::File {
         return (
             StatusCode::NOT_IMPLEMENTED,
-            "Content type 'file' is not implemented yet",
+            "Content type 'file' is not implemented",
         )
             .into_response();
     }
 
-    // println!("{}", payload);
+    println!("{}", serde_json::to_string_pretty(&payload).unwrap());
 
-    let response = CreateEntryResponse {
-        entry: Entry {
+    let response = response::CreateEntryResponse {
+        entry: entry::Entry {
             id: 1,
             content_type: payload.content_type,
         },
     };
     return (StatusCode::CREATED, Json(response)).into_response();
-}
-
-#[derive(Deserialize)]
-struct EntriesRequest {
-    namespace: String,
-}
-
-#[derive(Serialize)]
-struct EntriesResponse {
-    entries: u8,
-}
-
-#[derive(Deserialize)]
-struct CreateEntryRequest {
-    namespace: String,
-    content_type: ContentType,
-    content: String,
-}
-
-#[derive(Serialize)]
-struct CreateEntryResponse {
-    entry: Entry,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct Entry {
-    id: u64,
-    content_type: ContentType,
-}
-
-#[derive(Deserialize, Serialize, Debug, PartialEq)]
-#[serde(rename_all = "lowercase")]
-enum ContentType {
-    Text,
-    File,
 }
